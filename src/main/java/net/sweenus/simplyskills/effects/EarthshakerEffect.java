@@ -6,6 +6,7 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.predicate.entity.EntityPredicates;
@@ -50,11 +51,12 @@ public class EarthshakerEffect extends StatusEffect {
                                 if (!HelperMethods.checkFriendlyFire(le, player))
                                     break;
                             }
-
-                            le.setVelocity((le.getX() - livingEntity.getX()) /4,  (le.getY() - livingEntity.getY()) /4, (le.getZ() - livingEntity.getZ()) /4);
-                            le.timeUntilRegen = 0;
-                            le.damage(damageSource, (float) damage);
-                            le.timeUntilRegen = 0;
+                            if (!(le instanceof AnimalEntity)) {
+                                le.setVelocity((le.getX() - livingEntity.getX()) /4,  (le.getY() - livingEntity.getY()) /4, (le.getZ() - livingEntity.getZ()) /4);
+                                le.timeUntilRegen = 0;
+                                le.damage(damageSource, (float) damage);
+                                le.timeUntilRegen = 0;
+                            }
                         }
                     }
                 }
