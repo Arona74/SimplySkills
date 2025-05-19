@@ -13,6 +13,7 @@ import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileUtil;
@@ -81,8 +82,7 @@ public class HelperMethods {
         }
         if (livingEntity instanceof Tameable tameable) {
             if (tameable.getOwner() != null) {
-                if (tameable.getOwner() != player
-                        && (tameable.getOwner() instanceof PlayerEntity ownerPlayer)) {
+                if (tameable.getOwner() != player && (tameable.getOwner() instanceof PlayerEntity ownerPlayer)) {
                     if (HelperMethods.isOpacLoaded()) {
                         // Is OpenPAC loaded? And is the pet owner a team/ally member?
                         return OpacCompat.checkOpacFriendlyFire(ownerPlayer, player);
@@ -144,7 +144,8 @@ public class HelperMethods {
             return false;
         }
         return !(livingEntity instanceof ArmorStandEntity)
-                && !(livingEntity instanceof VillagerEntity);
+                && !(livingEntity instanceof VillagerEntity)
+                && !(livingEntity instanceof AnimalEntity);
     }
 
     //Get Item attack damage

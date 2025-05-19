@@ -6,7 +6,6 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.predicate.entity.EntityPredicates;
@@ -28,30 +27,25 @@ public class EarthshakerEffect extends StatusEffect {
     @Override
     public void applyUpdateEffect(LivingEntity livingEntity, int amplifier) {
         if (!livingEntity.getWorld().isClient()) {
+            if (livingEntity instanceof PlayerEntity player) {
+                int radius = 3;
+                float damageIncrease = SimplySkills.warriorConfig.passiveWarriorHeavyWeightDamageIncreasePerTick;
+                double damage_multiplier = 0.5;
+                double damage = 1 + (livingEntity.getArmor() * damage_multiplier);
+                DamageSource damageSource = livingEntity.getDamageSources().generic();
+                fallDistance += damageIncrease;
 
-            int radius = 3;
-            float damageIncrease = SimplySkills.warriorConfig.passiveWarriorHeavyWeightDamageIncreasePerTick;
-            double damage_multiplier = 0.5;
-            double damage = 1 + (livingEntity.getArmor() * damage_multiplier);
-            DamageSource damageSource = livingEntity.getDamageSources().generic();
-            fallDistance += damageIncrease;
+                if (livingEntity.isOnGround()) {
 
-            if (livingEntity.isOnGround()) {
+                    Box box = HelperMethods.createBox(livingEntity, radius);
+                    for (Entity entities : livingEntity.getWorld().getOtherEntities(livingEntity, box, EntityPredicates.VALID_LIVING_ENTITY)) {
 
-                Box box = HelperMethods.createBox(livingEntity, radius);
-                for (Entity entities : livingEntity.getWorld().getOtherEntities(livingEntity, box, EntityPredicates.VALID_LIVING_ENTITY)) {
-
-                    if (entities != null) {
-                        if ((entities instanceof LivingEntity le) && !livingEntity.hasStatusEffect(StatusEffects.SLOW_FALLING)){
-                            if (livingEntity instanceof PlayerEntity player) {
+                        if (entities != null) {
+                            if ((entities instanceof LivingEntity le) && !livingEntity.hasStatusEffect(StatusEffects.SLOW_FALLING) && HelperMethods.checkFriendlyFire(le, player)) {
                                 damageSource = player.getDamageSources().playerAttack(player);
-                                if (HelperMethods.isUnlocked("simplyskills:tree",
-                                        SkillReferencePosition.warriorHeavyWeight, player))
+                                if (HelperMethods.isUnlocked("simplyskills:tree", SkillReferencePosition.warriorHeavyWeight, player))
                                     damage +=fallDistance;
-                                if (!HelperMethods.checkFriendlyFire(le, player))
-                                    break;
-                            }
-                            if (!(le instanceof AnimalEntity)) {
+                                
                                 le.setVelocity((le.getX() - livingEntity.getX()) /4,  (le.getY() - livingEntity.getY()) /4, (le.getZ() - livingEntity.getZ()) /4);
                                 le.timeUntilRegen = 0;
                                 le.damage(damageSource, (float) damage);
@@ -59,18 +53,17 @@ public class EarthshakerEffect extends StatusEffect {
                             }
                         }
                     }
+                    livingEntity.getWorld().playSoundFromEntity(null, livingEntity, SoundRegistry.SOUNDEFFECT14,
+                            SoundCategory.PLAYERS, 0.3f, 1.1f);
+                    fallDistance = 0;
+                    HelperMethods.spawnParticlesPlane(
+                            livingEntity.getWorld(),
+                            ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                            livingEntity.getBlockPos(),
+                            radius, 0, 1, 0 );
+                    livingEntity.removeStatusEffect(EffectRegistry.EARTHSHAKER);
                 }
-                livingEntity.getWorld().playSoundFromEntity(null, livingEntity, SoundRegistry.SOUNDEFFECT14,
-                        SoundCategory.PLAYERS, 0.3f, 1.1f);
-                fallDistance = 0;
-                HelperMethods.spawnParticlesPlane(
-                        livingEntity.getWorld(),
-                        ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                        livingEntity.getBlockPos(),
-                        radius, 0, 1, 0 );
-                livingEntity.removeStatusEffect(EffectRegistry.EARTHSHAKER);
             }
-
         }
         super.applyUpdateEffect(livingEntity, amplifier);
     }
