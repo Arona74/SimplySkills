@@ -41,9 +41,9 @@ public class ConsecrateEffect extends StatusEffect {
                 int spellforgedStacks = SimplySkills.crusaderConfig.signatureCrusaderConsecrationSpellforgedStacks - 1;
                 int spellforgedStacksMax = SimplySkills.crusaderConfig.signatureCrusaderConsecrationSpellforgedStacksMax - 1;
 
-                Box box = HelperMethods.createBox(player, radius * 2);
+                Box box = HelperMethods.createBox(player, radius);
                 if (player.age % hitFrequency == 0) {
-                    player.heal((float) damage / 5);
+                    player.heal((float) damage);
                     for (Entity entities : livingEntity.getWorld().getOtherEntities(livingEntity, box, EntityPredicates.VALID_LIVING_ENTITY)) {
 
                         if (entities != null) {

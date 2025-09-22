@@ -4,11 +4,14 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageType;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -172,9 +175,13 @@ public class AscendancyAbilities {
             if (attacker.hasStatusEffect(EffectRegistry.TORMENT)) {
                 if (!(attacker.getStatusEffect(EffectRegistry.TORMENT) instanceof SimplyStatusEffectInstance))
                     return false;
+
                 SimplyStatusEffectInstance tormentEffect = (SimplyStatusEffectInstance) attacker.getStatusEffect(EffectRegistry.TORMENT);
                 if (tormentEffect.getSourceEntity() instanceof PlayerEntity sourcePlayer && sourcePlayer == player) {
-                    attacker.damage(source, amount);
+                    RegistryKey<DamageType> typeKey = source.getTypeRegistryEntry().getKey().orElse(DamageTypes.GENERIC);
+                    DamageSource reflected = attacker.getDamageSources().create(typeKey, player);
+
+                    attacker.damage(reflected, amount);
                     return true;
                 }
             }

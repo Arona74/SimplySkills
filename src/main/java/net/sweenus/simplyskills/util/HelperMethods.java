@@ -46,6 +46,8 @@ import net.sweenus.simplyskills.SimplySkills;
 import net.sweenus.simplyskills.abilities.NecromancerAbilities;
 import net.sweenus.simplyskills.network.ModPacketHandler;
 import net.sweenus.simplyskills.util.compat.opac.OpacCompat;
+import io.icker.factions.util.FactionCompatHelper;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.util.*;
 
@@ -62,6 +64,18 @@ public class HelperMethods {
             return false;
         if (livingEntity == player)
             return false;
+
+        // Factions (Fork) mod compat
+        if (FabricLoader.getInstance().isModLoaded("factions")
+            && player instanceof ServerPlayerEntity sp
+            && livingEntity instanceof ServerPlayerEntity lp) {
+                // Check if factions allows damage, friendly fire allowed
+                if (FactionCompatHelper.canDamage(sp, lp)) {
+                    return true; // Can damage
+                } else {
+                    return false; // Same faction or ally => no damage
+                }
+        }
 
         // Check if the player and the living entity are on the same team
         AbstractTeam playerTeam = player.getScoreboardTeam();

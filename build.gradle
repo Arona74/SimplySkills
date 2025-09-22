@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.0-SNAPSHOT'
+    id 'fabric-loom' version '1.6-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -7,65 +7,57 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {
-
     maven {
         url "https://www.cursemaven.com"
-        content {
-            includeGroup "curse.maven"
-        }
+        content { includeGroup "curse.maven" }
     }
     maven {
         name = 'Modrinth'
         url = 'https://api.modrinth.com/maven'
-        content {
-            includeGroup 'maven.modrinth'
-        }
+        content { includeGroup 'maven.modrinth' }
     }
     maven { url "https://maven.shedaniel.me/" }
     maven { url "https://maven.terraformersmc.com/releases/" }
     maven { url 'https://jitpack.io' }
-
+    mavenCentral() // ✅ required for MixinExtras
 }
 
 dependencies {
-    // To change the versions see the gradle.properties file
-    modCompileOnly("com.terraformersmc:modmenu:${rootProject.mod_menu_version}") { transitive false }
+    // Core Minecraft + Fabric
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-        // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
+    // ModMenu (compile only)
+    modCompileOnly("com.terraformersmc:modmenu:${rootProject.mod_menu_version}") { transitive false }
+
+    // External mods
     modImplementation "curse.maven:puffish-skills-835091:${project.puffish_skills_version}"
     modImplementation "curse.maven:puffish-attributes-991341:${project.puffish_attributes_version}"
     modImplementation "maven.modrinth:spell-power:${project.spellpower_version}-fabric"
-    modImplementation("maven.modrinth:spell-engine:${project.spell_engine_version}-fabric")
-    //modImplementation files("build/libs/dependencies/spell_engine-0.12.01.20.1.jar")
-
+    modImplementation "maven.modrinth:spell-engine:${project.spell_engine_version}-fabric"
     modImplementation "curse.maven:simply-swords-659887:5255981"
-    //modImplementation files("build/libs/dependencies/simplyswords-1.55.0-1.20.1.jar")
-
     modImplementation "curse.maven:paladins-and-priests-856548:${project.paladins_version}"
-    //modImplementation files("build/libs/dependencies/paladins-1.0.21.20.1.jar")
-
     modImplementation "curse.maven:immersive-melodies-904471:${project.immersive_melodies_version}"
-
     modImplementation "curse.maven:open-parties-and-claims-636608:${project.openpac_version}"
-
     modImplementation "curse.maven:amethyst-core-639888:5255903"
-    //modImplementation files("build/libs/dependencies/amethyst_core-1.4.101.20.1.jar")
-
     modImplementation "curse.maven:archers-932359:${project.archers_version}"
 
-    implementation("com.github.LlamaLad7:MixinExtras:${mixin_extras_version}")
-    annotationProcessor("com.github.LlamaLad7:MixinExtras:${mixin_extras_version}")
-    implementation include("com.github.ZsoltMolnarrr:TinyConfig:${project.tiny_config_version}")
+    // ✅ MixinExtras (official Maven Central)
+    implementation "io.github.llamalad7:mixinextras-fabric:${project.mixin_extras_version}"
+    annotationProcessor "io.github.llamalad7:mixinextras-common:${project.mixin_extras_version}"
 
+    // ✅ TinyConfig (from JitPack)
+    implementation "com.github.ZsoltMolnarrr:TinyConfig:${project.tiny_config_version}"
+
+    // Cloth Config
     modApi("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
         exclude(group: "net.fabricmc.fabric-api")
     }
 
+    // Compat for Factions (local jar)
+    modImplementation files('libs/factions.jar')
 }
 
 processResources {

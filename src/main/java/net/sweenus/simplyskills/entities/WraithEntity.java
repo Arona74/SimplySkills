@@ -124,6 +124,7 @@ public class WraithEntity extends TameableEntity implements Angerable, Flutterer
                                         false, true);
                                 agonyEffect.setSourceEntity(player);
                                 ee.addStatusEffect(agonyEffect);
+                                //System.out.println("Applying AGONY on targeted entity");
                                 player.getWorld().playSoundFromEntity(null, player, SoundRegistry.MAGIC_SHAMANIC_SPELL_04,
                                         SoundCategory.PLAYERS, 0.1f, 1.0f);
                             }
@@ -160,6 +161,8 @@ public class WraithEntity extends TameableEntity implements Angerable, Flutterer
             ((DirectionalFlightMoveControl) moveControl).onAttack();
         }
         target.timeUntilRegen = 0;
+        // if (this.getOwner() != null && this.getOwner() instanceof PlayerEntity player && target instanceof LivingEntity le && !HelperMethods.checkFriendlyFire(le, player))
+        //     return false;
         return super.tryAttack(target);
     }
     @Override
