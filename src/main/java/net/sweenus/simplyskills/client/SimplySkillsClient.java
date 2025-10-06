@@ -1,6 +1,8 @@
 package net.sweenus.simplyskills.client;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
@@ -14,6 +16,7 @@ import net.minecraft.util.Identifier;
 import net.spell_engine.api.effect.CustomModelStatusEffect;
 import net.spell_engine.api.effect.CustomParticleStatusEffect;
 import net.spell_engine.api.render.CustomModels;
+import net.sweenus.simplyskills.SimplySkills;
 import net.sweenus.simplyskills.abilities.SignatureAbilities;
 import net.sweenus.simplyskills.client.effects.*;
 import net.sweenus.simplyskills.client.events.ClientEvents;
@@ -33,6 +36,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
+@Environment(EnvType.CLIENT)
 public class SimplySkillsClient implements ClientModInitializer {
 
     public static int abilityCooldown = 500;
@@ -43,10 +47,25 @@ public class SimplySkillsClient implements ClientModInitializer {
     public static KeyBinding bindingAbility1 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.simplyskills.ability1", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.category.simplyskills"));
     public static KeyBinding bindingAbility2 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.simplyskills.ability2", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_R, "key.category.simplyskills"));
 
-    public static EntityModelLayer SPELLTARGETENTITY_MODEL = new EntityModelLayer(new Identifier("spell_target_entity", "cube"), "main");
-    public static EntityModelLayer DREADGLARE_MODEL = new EntityModelLayer(new Identifier("dreadglare", "cube"), "main");
-    public static EntityModelLayer GREATER_DREADGLARE_MODEL = new EntityModelLayer(new Identifier("greater_dreadglare", "cube"), "main");
-    public static EntityModelLayer WRAITH_MODEL = new EntityModelLayer(new Identifier("wraith", "cube"), "main");
+    // Model layer definitions with correct namespace
+    public static EntityModelLayer SPELLTARGETENTITY_MODEL = new EntityModelLayer(new Identifier(SimplySkills.MOD_ID, "spell_target_entity"), "main");
+    public static EntityModelLayer DREADGLARE_MODEL = new EntityModelLayer(new Identifier(SimplySkills.MOD_ID, "dreadglare"), "main");
+    public static EntityModelLayer GREATER_DREADGLARE_MODEL = new EntityModelLayer(new Identifier(SimplySkills.MOD_ID, "greater_dreadglare"), "main");
+    public static EntityModelLayer WRAITH_MODEL = new EntityModelLayer(new Identifier(SimplySkills.MOD_ID, "wraith"), "main");
+
+    // Static initializer to register model layers BEFORE onInitializeClient
+    // This ensures they're registered early enough for Connector to process them before Forge validation
+    static {
+        try {
+            // Register model layers immediately when the class is loaded
+            EntityModelLayerRegistry.registerModelLayer(DREADGLARE_MODEL, DreadglareModel::getTexturedModelData);
+            EntityModelLayerRegistry.registerModelLayer(WRAITH_MODEL, WraithModel::getTexturedModelData);
+            EntityModelLayerRegistry.registerModelLayer(GREATER_DREADGLARE_MODEL, GreaterDreadglareModel::getTexturedModelData);
+            SimplySkills.LOGGER.info("Pre-registered entity model layers for Connector compatibility");
+        } catch (Exception e) {
+            SimplySkills.LOGGER.error("Failed to pre-register model layers", e);
+        }
+    }
 
     @Override
     public void onInitializeClient() {
@@ -72,7 +91,6 @@ public class SimplySkillsClient implements ClientModInitializer {
                 CurseRenderer.modelId_overlay
         ));
 
-
         CustomModelStatusEffect.register(EffectRegistry.BLADESTORM, new BladestormRenderer());
         CustomModelStatusEffect.register(EffectRegistry.ARCANEVOLLEY, new ArcaneVolleyRenderer());
         CustomModelStatusEffect.register(EffectRegistry.FROSTVOLLEY, new FrostVolleyRenderer());
@@ -93,24 +111,19 @@ public class SimplySkillsClient implements ClientModInitializer {
         CustomModelStatusEffect.register(EffectRegistry.AGONY, new CurseRenderer());
         CustomModelStatusEffect.register(EffectRegistry.TORMENT, new CurseRenderer());
 
+        // Register entity renderers (model layers already registered in static block)
+        registerEntityRenderers();
+        
         CooldownPacket.init();
-        registerEntityModels();
         ModPacketHandler.registerClient();
         ClientEvents.registerClientEvents();
-
-        //Keybindings
-        //KeyBinding bindingAbility2 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.simplyskills.ability2", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_R, "key.category.simplyskills"));
-        //KeyBinding bindingAbility3 = KeyBindingHelper.registerKeyBinding(new StickyKeyBinding("key.simplyskills.ability3", GLFW.GLFW_KEY_V, "key.category.simplyskills", () -> true));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (bindingAbility1.wasPressed()) {
                 if (System.currentTimeMillis() > (lastUseTime + abilityCooldown)) {
-
                     SignatureAbilities.sendKeybindPacket("signature");
-
                     lastUseTime = System.currentTimeMillis();
                     client.player.getWorld().playSound(client.player, client.player.getBlockPos(), SoundRegistry.SOUNDEFFECT7, SoundCategory.PLAYERS, 0.4f, 1.5f);
-
                 } else {
                     client.player.sendMessage(Text.literal("Ability can be used again in " + (((lastUseTime + abilityCooldown) - System.currentTimeMillis()) / 1000) + "s"), true);
                     client.player.getWorld().playSound(client.player, client.player.getBlockPos(), SoundRegistry.GONG_WARBLY, SoundCategory.PLAYERS, 0.1f, 1.5f);
@@ -119,37 +132,24 @@ public class SimplySkillsClient implements ClientModInitializer {
 
             while (bindingAbility2.wasPressed()) {
                 if (System.currentTimeMillis() > (lastUseTime2 + abilityCooldown2)) {
-
                     SignatureAbilities.sendKeybindPacket("ascendancy");
-
                     lastUseTime2 = System.currentTimeMillis();
                     client.player.getWorld().playSound(client.player, client.player.getBlockPos(), SoundRegistry.SOUNDEFFECT7, SoundCategory.PLAYERS, 0.4f, 1.5f);
-
                 } else {
                     client.player.sendMessage(Text.literal("Ability can be used again in " + (((lastUseTime2 + abilityCooldown2) - System.currentTimeMillis()) / 1000) + "s"), true);
                     client.player.getWorld().playSound(client.player, client.player.getBlockPos(), SoundRegistry.GONG_WARBLY, SoundCategory.PLAYERS, 0.1f, 1.5f);
                 }
             }
-
-            /* Toggle abilities disabled for now (To be implemented)
-
-            if (bindingAbility3.isPressed()) {
-                client.player.sendMessage(Text.literal("Toggle Ability is active"), false);
-            }
-            */
-
         });
     }
 
-    public static void registerEntityModels() {
-            EntityRendererRegistry.register(EntityRegistry.SPELL_TARGET_ENTITY, SpellTargetEntityRenderer::new);
-            EntityRendererRegistry.register(EntityRegistry.DREADGLARE, DreadglareRenderer::new);
-            EntityModelLayerRegistry.registerModelLayer(DREADGLARE_MODEL, DreadglareModel::getTexturedModelData);
-            EntityRendererRegistry.register(EntityRegistry.WRAITH, WraithRenderer::new);
-            EntityModelLayerRegistry.registerModelLayer(WRAITH_MODEL, WraithModel::getTexturedModelData);
-            EntityRendererRegistry.register(EntityRegistry.GREATER_DREADGLARE, GreaterDreadglareRenderer::new);
-            EntityModelLayerRegistry.registerModelLayer(GREATER_DREADGLARE_MODEL, GreaterDreadglareModel::getTexturedModelData);
-
+    /**
+     * Register entity renderers only (model layers already registered in static block)
+     */
+    public static void registerEntityRenderers() {
+        EntityRendererRegistry.register(EntityRegistry.SPELL_TARGET_ENTITY, SpellTargetEntityRenderer::new);
+        EntityRendererRegistry.register(EntityRegistry.DREADGLARE, DreadglareRenderer::new);
+        EntityRendererRegistry.register(EntityRegistry.WRAITH, WraithRenderer::new);
+        EntityRendererRegistry.register(EntityRegistry.GREATER_DREADGLARE, GreaterDreadglareRenderer::new);
     }
-
 }
